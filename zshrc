@@ -27,7 +27,7 @@ export GOPATH=$HOME/go
 PATH=$PATH:$GOPATH/bin
 
 # Android
-export ANDROID_HOME=/Applications/Android\ Studio.app/sdk/
+export ANDROID_HOME=/Volumes/storage/android/android-sdk-macosx
 PATH=$PATH:$ANDROID_HOME/platform-tools
 PATH=$PATH:$ANDROID_HOME/tools
 alias android-screenshot="adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' >  screen-`date \"+%m-%d-%H:%M:%S\"`.png"
@@ -35,7 +35,7 @@ test -e ~/droid-devices && source ~/.droid-devices
 export GRADLE_OPTS="-Xmx2048m -Xms256m -XX:MaxPermSize=512m -XX:+CMSClassUnloadingEnabled -XX:+HeapDumpOnOutOfMemoryError"
 
 # aliases for running postgres db from command line
-PG_DATA_DIR=/Users/jesse/pgdb/
+PG_DATA_DIR=/Volumes/Storage/pgdb/
 alias RUN_POSTGRES='postgres -D $PG_DATA_DIR'
 alias RUN_POSTGRES_DEBUG='postgres -d 1 -s -D $PG_DATA_DIR'
 
@@ -91,4 +91,35 @@ function ogr_layer_extent() {
         sed 's/ - /, /g')
     EXTENT=`echo $EXTENT | awk -F ',' '{print $1 " " $4 " " $3 " " $2}'`
     echo -n "$EXTENT"
+}
+
+function exportf (){
+    export $(echo $1)="`whence -f $1 | sed -e "s/$1 //" `"
+}
+
+function fp () { 
+    ps Ao pid,comm|awk '{match($0,/[^\/]+$/); print substr($0,RSTART,RLENGTH)": "$1}'|grep -i $1|grep -v grep
+}
+
+# build a menu of processes matching (case-insensitive, partial) first parameter
+# now automatically tries to use the `quit` script if process is a Mac app <http://jon.stovell.info/personal/Software.html>
+function fk () {
+    local cmd OPT
+    IFS=$'\n'
+    PS3='Kill which process? (q to cancel): '
+    select OPT in $(fp $1); do
+        if [[ $OPT =~ [0-9]$ ]]; then
+            cmd=$(ps -p ${OPT##* } -o command|tail -n 1)
+            if [[ "$cmd" =~ "Contents/MacOS" ]] && [[ -f /usr/local/bin/quit ]]; then
+                echo "Quitting ${OPT%%:*}"
+                cmd=$(echo "$cmd"| sed -E 's/.*\/(.*)\.app\/.*/\1/')
+                /usr/local/bin/quit -n "$cmd"
+            else
+                echo "killing ${OPT%%:*}"
+                kill ${OPT##* }
+            fi
+        fi
+        break
+    done
+    unset IFS
 }
