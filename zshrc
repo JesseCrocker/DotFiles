@@ -123,3 +123,7 @@ function fk () {
     done
     unset IFS
 }
+
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+alias symbolicatecrash=/Applications/Xcode.app/Contents/SharedFrameworks/DTDeviceKitBase.framework/Resources/symbolicatecrash
+alias timestamp=date +'%s'
