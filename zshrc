@@ -5,7 +5,7 @@ COMPLETION_WAITING_DOTS="true"
 
 plugins=(git osx sublime github brew git-flow django fabric github urltools)
 
-source $ZSH/oh-my-zsh.sh
+DISABLE_AUTO_UPDATE="true" source $ZSH/oh-my-zsh.sh
 
 # prompt
 PROMPT='%{$fg[$NCOLOR]%}%B%n${SSH_TTY:+@%m}%b%{$reset_color%}:%{$fg[blue]%}%B%c/%b%{$reset_color%} $(git_prompt_info)%(!.#.$) '
@@ -18,24 +18,21 @@ PATH=~/local-bin:~/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/s
 #PATH=$PATH:/Library/Frameworks/GDAL.framework/Programs
 PATH=$PATH:/usr/libexec/git-core
 
-# python
-PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages
-export PYTHONPATH
-
 # Go
 export GOPATH=$HOME/go
 PATH=$PATH:$GOPATH/bin
 
 # Android
-export ANDROID_HOME=/Volumes/storage/android/android-sdk-macosx
+export ANDROID_HOME=/Users/jesse/android/android-sdk-macosx
 PATH=$PATH:$ANDROID_HOME/platform-tools
 PATH=$PATH:$ANDROID_HOME/tools
-alias android-screenshot="adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' >  screen-`date \"+%m-%d-%H:%M:%S\"`.png"
+alias android-screenshot='adb shell screencap -p >  screen-$(datestamp-filename).png'
 test -e ~/droid-devices && source ~/.droid-devices
-export GRADLE_OPTS="-Xmx2048m -Xms256m -XX:MaxPermSize=512m -XX:+CMSClassUnloadingEnabled -XX:+HeapDumpOnOutOfMemoryError"
+#export GRADLE_OPTS="-Xmx2048m -Xms256m -XX:+CMSClassUnloadingEnabled -XX:+HeapDumpOnOutOfMemoryError"
+#export _JAVA_OPTIONS="-XX:+UseG1GC -Xms1g -Xmx2g"
 
 # aliases for running postgres db from command line
-PG_DATA_DIR=/Volumes/Storage/pgdb/
+PG_DATA_DIR=/Users/jesse/pgdb/
 alias RUN_POSTGRES='postgres -D $PG_DATA_DIR'
 alias RUN_POSTGRES_DEBUG='postgres -d 1 -s -D $PG_DATA_DIR'
 
@@ -93,6 +90,18 @@ function ogr_layer_extent() {
     echo -n "$EXTENT"
 }
 
+function gdal_pixel_count() {
+    if [ -z "$1" ]; then
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_extent <input_raster>"
+        return
+    fi
+    EXTENT=$(gdalinfo $1 |\
+        grep "Size is" |\
+        sed "s/Size is //g;s/ //;s/\n//")
+    echo -n "$EXTENT"
+}
+
 function exportf (){
     export $(echo $1)="`whence -f $1 | sed -e "s/$1 //" `"
 }
@@ -126,4 +135,30 @@ function fk () {
 
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 alias symbolicatecrash=/Applications/Xcode.app/Contents/SharedFrameworks/DTDeviceKitBase.framework/Resources/symbolicatecrash
-alias timestamp=date +'%s'
+alias timestamp="date +'%s'"
+alias datestamp="date +'%Y-%m-%dT%H:%M:%SZ'"
+alias datestamp-filename="date +'%Y-%m-%dT%H.%M.%SZ'"
+
+alias http_10000='http-server -p 10000 --cors'
+alias iTMSTransporter='/Applications/Xcode.app/Contents/Applications/Application\ Loader.app/Contents/MacOS/itms/bin/iTMSTransporter'
+
+alias hostip='ipconfig getifaddr en0'
+
+alias sourcetree='open -a SourceTree'
+
+function unique_file_extensions(){
+    find $1 -type f -name '*.*' | awk -F. '!a[$NF]++{print $NF}'
+}
+alias fixcamera='sudo killall VDCAssistant'
+alias qgis='open -a QGIS3.16.app'
+
+autoload -U zmv
+
+alias gaiacloud_merge_master='git checkout develop && git pull && git checkout master && git pull && git merge develop && git push origin master && git checkout develop && git merge master && git push origin develop'
+
+alias run_postgres_docker='docker run --rm -it -v $PG_DATA_DIR:/pgdata:delegated -e PGDATA=/pgdata -p 5432:5432 mdillon/postgis:9.6'
+
+export GDAL_DRIVER_PATH=/usr/local/lib/gdalplugins
+export PATH="/usr/local/opt/osgeo-gdal-python/bin:$PATH"
+
+alias awscreds="aws-vault exec tb-prod-jesse -- "
